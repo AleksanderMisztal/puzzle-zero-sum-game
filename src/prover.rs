@@ -31,11 +31,13 @@ pub fn prove<
     
     let mut fs_rng = FS::initialize(&to_bytes![&PROTOCOL_NAME, statement].unwrap());
     let (h_poly, x_g_poly_plus_beta) = f_poly_l.divide_by_vanishing_poly(domain).unwrap();
-    let g_poly = DensePolynomial::from_coefficients_vec(x_g_poly_plus_beta.coeffs[1..].to_vec());
-    let beta = x_g_poly_plus_beta.coeffs[0];
+    let random_poly = DensePolynomial::from_coefficients_vec(vec![F::rand(rng), F::rand(rng)]);
+    let x_g_poly_plus_beta_rand = x_g_poly_plus_beta + random_poly.clone();
+    let g_poly = DensePolynomial::from_coefficients_vec(x_g_poly_plus_beta_rand.coeffs[1..].to_vec());
+    let beta = x_g_poly_plus_beta_rand.coeffs[0];
     
     let s_poly_0 = statement.domain.size_as_field_element().inverse().unwrap() * sum - beta;
-    let s_poly = DensePolynomial::from_coefficients_vec(vec![s_poly_0]);
+    let s_poly = DensePolynomial::from_coefficients_vec(vec![s_poly_0]) + random_poly;
     
     let s_poly_l = LabeledPolynomial::new("s".into(), s_poly, None, None);
     let h_poly_l = LabeledPolynomial::new("h".into(), h_poly, None, None);
@@ -58,7 +60,6 @@ pub fn prove<
     let s_opening = s_poly_l.evaluate(&xi);
     let g_opening = g_poly_l.evaluate(&xi);
     let h_opening = h_poly_l.evaluate(&xi);
-
 
     let f_l = LabeledCommitment::new("s".into(), f.clone(), None);
     let s_l = LabeledCommitment::new("s".into(), s.clone(), None);
