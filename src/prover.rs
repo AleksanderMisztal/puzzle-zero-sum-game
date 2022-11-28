@@ -24,20 +24,15 @@ pub fn prove<
     f_rand: &PC::Randomness,
     rng: &mut R,
 ) -> Result<Proof<F, PC>, Error<PC::Error>> {
-    //In the rest of protocol that is not described here, the masking polynomial is opened twice. Therefore, the masking polynomial cannot be a constant polynomial.
+    // In the rest of protocol that is not described here, the masking polynomial is opened twice. Therefore, the masking polynomial cannot be a constant polynomial.
     let domain = statement.domain;
-    let sum = statement.sum;
+    let _sum = statement.sum;
     let f: PC::Commitment = statement.f.clone();
     
     let mut fs_rng = FS::initialize(&to_bytes![&PROTOCOL_NAME, statement].unwrap());
-    let (h_poly, x_g_poly_plus_beta) = f_poly_l.divide_by_vanishing_poly(domain).unwrap();
-    let random_poly = DensePolynomial::from_coefficients_vec(vec![F::rand(rng), F::rand(rng)]);
-    let x_g_poly_plus_beta_rand = x_g_poly_plus_beta + random_poly.clone();
-    let g_poly = DensePolynomial::from_coefficients_vec(x_g_poly_plus_beta_rand.coeffs[1..].to_vec());
-    let beta = x_g_poly_plus_beta_rand.coeffs[0];
-    
-    let s_poly_0 = statement.domain.size_as_field_element().inverse().unwrap() * sum - beta;
-    let s_poly = DensePolynomial::from_coefficients_vec(vec![s_poly_0]) + random_poly;
+    let h_poly = DensePolynomial::from_coefficients_vec(vec![F::zero()]);
+    let g_poly = DensePolynomial::from_coefficients_vec(vec![F::zero()]);
+    let s_poly = f_poly_l.polynomial() * (-F::from(1u64));
     
     let s_poly_l = LabeledPolynomial::new("s".into(), s_poly, None, None);
     let h_poly_l = LabeledPolynomial::new("h".into(), h_poly, None, None);
@@ -94,7 +89,6 @@ pub fn prove<
         pc_proof,
     });
 }
-
 
 // s(xi) + f(xi) = xi * g(xi) + h(xi) * pi(xi-d_i) + sum * d_s^-1
 // s(xi) + f(xi) = xi * g(xi) + h(xi) * pi(xi-d_i) + sum * (predictable random number)
